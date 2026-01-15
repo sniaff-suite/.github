@@ -83,12 +83,24 @@ MITM (Traffic Interception)
   mitm.stop              - Stop proxy
 
 REVDOCKER (Static Analysis Container)
-  revdocker.start        - Start Docker container with apktool/jadx
-  revdocker.exec         - Execute command in container (apktool d, jadx -d, etc.)
-  revdocker.upload       - Upload file (APK) to container workspace
-  revdocker.download     - Download decompiled output to local filesystem
+  revdocker.start        - Start Docker container with RE tools
+  revdocker.exec         - Execute command in container
+  revdocker.upload       - Upload file (APK, binary) to container workspace
+  revdocker.download     - Download output to local filesystem
   revdocker.status       - Get container status
   revdocker.stop         - Stop container
+
+  Container tools:
+    - apktool: APK decompilation/recompilation
+    - jadx: Java/DEX decompiler to source code
+    - radare2 (r2): RE framework - disassembly, analysis, debugging, patching
+    - readelf: Display ELF headers and sections
+    - nm: List symbols from object files
+    - objdump: Object file info and disassembly
+    - python3/pip: Python with package manager
+    - nc (netcat): Network utility
+    - curl: HTTP client
+    - sudo apt/pip: Install additional packages on demand
 
 ---
 
@@ -98,7 +110,8 @@ Static Analysis
   - Decompile APK with apktool (smali) and jadx (Java/Kotlin source)
   - Search for: hardcoded secrets, API endpoints, crypto implementations
   - Analyze: certificate pinning, root detection, obfuscation
-  - Inspect native libraries (.so files): JNI exports, crypto routines, signing logic
+  - Inspect native libraries (.so files) with radare2: disassembly, strings, function analysis
+  - Use r2 commands: aaa (analyze all), afl (list functions), pdf (disassemble function), iz (strings)
 
 Dynamic Analysis
   - Observe runtime behavior through UI interaction
