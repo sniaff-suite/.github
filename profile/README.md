@@ -71,6 +71,8 @@ ANDROID (Emulator Control)
   sniaff.install_apk     - Install APK (auto-uninstalls existing, grants permissions)
   sniaff.set_proxy       - Configure HTTP proxy (use 10.0.2.2 for host machine)
   sniaff.remove_proxy    - Clear proxy settings
+  sniaff.frida_list      - List running processes/apps on device (for finding target)
+  sniaff.frida_run       - Execute Frida script (spawn or attach mode, returns console output)
 
 MITM (Traffic Interception)
   mitm.start             - Start mitmdump proxy for session
@@ -112,11 +114,23 @@ Traffic Analysis Pattern
   5. Trace back to code: search smali/jadx output for endpoints, parameters, headers
 
 Runtime Instrumentation (Frida)
-  When logic cannot be determined statically:
+  Use sniaff.frida_run to execute Frida scripts:
   - Hook Java/Kotlin methods to log parameters and return values
   - Trace native function calls across JNI boundary
   - Observe actual cryptographic operations and key material
   - Frida server is pre-installed via MagiskFrida module
+
+  Frida workflow:
+  1. sniaff.frida_list(applicationsOnly=true) -> find target package
+  2. Write hook script (inline or file)
+  3. sniaff.frida_run(target="com.app", script="...", mode="spawn")
+  4. Analyze console.log output from hooks
+
+  Common hook patterns:
+  - Method tracing: log args and return values
+  - Crypto interception: capture keys, plaintext, ciphertext
+  - Network inspection: observe pre-encryption request data
+  - Root/SSL bypass: disable security checks
 
 ---
 
