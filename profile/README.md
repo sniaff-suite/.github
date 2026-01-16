@@ -110,19 +110,17 @@ REVDOCKER (Static Analysis Container)
     - arm64-v8a/libfrida-gadget.so (64-bit ARM)
 
 FRIDA (Runtime Instrumentation)
-  enumerate_devices           - List connected devices (USB, Remote, Local)
-  enumerate_processes         - List processes on a device
-  get_process_by_name         - Find process by name
-  list_applications           - List installed apps on device
-  get_frontmost_application   - Get foreground app
-  spawn_process               - Spawn process with optional script injection and auto-resume
-  kill_process                - Terminate a process
-  resume_process              - Resume paused process (manual control)
-  create_interactive_session  - Attach to running process and create persistent session
-  execute_in_session          - Inject and execute JavaScript (V8 runtime)
-  get_session_messages        - Get console logs from injected script
-  call_script_function        - Call rpc.exports function
-  post_message_to_session     - Send message to script (recv handler)
+  frida.enumerate_devices     - List connected devices (USB, Remote, Local)
+  frida.enumerate_processes   - List processes on a device
+  frida.get_process           - Find process by name
+  frida.list_applications     - List installed apps on device
+  frida.get_frontmost         - Get foreground app
+  frida.spawn_process         - Spawn process with optional script injection
+  frida.kill_process          - Terminate a process
+  frida.resume_process        - Resume paused process
+  frida.execute               - Execute Frida script on process
+                                Params: sessionId, pid, code, runtime (java/objc/raw), deviceId
+                                Use runtime="java" for Android (auto-wraps in Java.perform)
 
 ---
 
@@ -161,16 +159,24 @@ Traffic Analysis Pattern
 Runtime Instrumentation (Frida)
   Use Frida MCP for dynamic analysis:
 
-  Quick spawn with script (recommended):
-  1. list_applications(deviceId) -> find target package
-  2. spawn_process(identifier, script=<frida_js>, auto_resume=true) -> spawn, inject, resume in one call
-  3. get_session_messages(sessionId) -> read console.log output from returned session_id
+  Basic workflow:
+  1. frida.enumerate_processes() -> find target PID
+  2. frida.execute(sessionId, pid, code, runtime="java") -> run Frida script
+     - Each execute is independent (no persistent session)
+     - Scripts saved in ~/.sniaff/sessions/{sessionId}/frida/
 
-  Manual control (when needed):
-  1. spawn_process(identifier, auto_resume=false) -> start app suspended
-  2. create_interactive_session(pid, deviceId) -> attach to process
-  3. execute_in_session(sessionId, script, keep_alive=true) -> inject hooks
-  4. resume_process(pid, deviceId) -> let app run
+  Example - Check Java availability:
+    frida.execute(sessionId="sniaff-abc123", pid=1234, code="return Java.available", runtime="java")
+
+  Example - Enumerate loaded classes:
+    frida.execute(sessionId="sniaff-abc123", pid=1234, code="""
+      var classes = [];
+      Java.enumerateLoadedClasses({
+        onMatch: function(c) { classes.push(c); },
+        onComplete: function() {}
+      });
+      return classes.slice(0, 50);
+    """, runtime="java")
 
   Common hook patterns:
   - Method tracing: log args and return values
