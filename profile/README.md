@@ -2,19 +2,21 @@
 
 **Sniaff** is an MCP-based toolkit for automated Android app reversing and security research.
 
-It provides four coordinated MCP servers that work together to create a complete reversing environment:
+It provides five coordinated MCP servers that work together to create a complete reversing environment:
 
 - **sniaff-core-mcp** - Session orchestrator that coordinates all components
 - **sniaff-android-mcp** - Android emulator management with rooted AVD support
 - **sniaff-mitmdump-mcp** - MITM proxy for HTTP/HTTPS traffic capture and analysis
-- **sniaff-revdocker-mcp** - Docker container with reverse engineering tools (apktool, jadx)
+- **sniaff-revdocker-mcp** - Docker container with reverse engineering tools (apktool, jadx, radare2)
+- **frida-mcp-node** - Dynamic instrumentation via Frida for runtime hooking and analysis
 
 ## Features
 
 - Automated rooted Android emulator setup (Magisk)
 - Real-time HTTP/HTTPS traffic interception
 - Query traffic by time range (e.g., "requests from last 10 seconds after login tap")
-- Static analysis with apktool/jadx in isolated container
+- Static analysis with apktool/jadx/radare2 in isolated container
+- Runtime instrumentation with Frida for method hooking and crypto interception
 - Coordinated session management across all components
 - Designed for integration with AI agents (Claude, etc.)
 
@@ -51,7 +53,7 @@ At the start of every engagement, establish:
 
 Available MCP Tools
 
-You have access to four coordinated MCP servers. Use them in combination.
+You have access to five coordinated MCP servers. Use them in combination.
 
 CORE (Session Orchestration)
   core.start_session     - Create a new session (returns sessionId for all other tools)
@@ -71,8 +73,6 @@ ANDROID (Emulator Control)
   sniaff.install_apk     - Install APK (auto-uninstalls existing, grants permissions)
   sniaff.set_proxy       - Configure HTTP proxy (use 10.0.2.2 for host machine)
   sniaff.remove_proxy    - Clear proxy settings
-  sniaff.frida_list      - List running processes/apps on device (for finding target)
-  sniaff.frida_run       - Execute Frida script (spawn or attach mode, returns console output)
 
 MITM (Traffic Interception)
   mitm.start             - Start mitmdump proxy for session
@@ -102,6 +102,21 @@ REVDOCKER (Static Analysis Container)
     - curl: HTTP client
     - sudo apt/pip: Install additional packages on demand
 
+FRIDA (Runtime Instrumentation)
+  enumerate_devices           - List connected devices (USB, Remote, Local)
+  enumerate_processes         - List processes on a device
+  get_process_by_name         - Find process by name
+  list_applications           - List installed apps on device
+  get_frontmost_application   - Get foreground app
+  spawn_process               - Spawn new process with args/env
+  kill_process                - Terminate a process
+  resume_process              - Resume paused process
+  create_interactive_session  - Attach to process and create persistent session
+  execute_in_session          - Inject and execute JavaScript (V8 runtime)
+  get_session_messages        - Get console logs from injected script
+  call_script_function        - Call rpc.exports function
+  post_message_to_session     - Send message to script (recv handler)
+
 ---
 
 Analysis Methodology
@@ -127,17 +142,13 @@ Traffic Analysis Pattern
   5. Trace back to code: search smali/jadx output for endpoints, parameters, headers
 
 Runtime Instrumentation (Frida)
-  Use sniaff.frida_run to execute Frida scripts:
-  - Hook Java/Kotlin methods to log parameters and return values
-  - Trace native function calls across JNI boundary
-  - Observe actual cryptographic operations and key material
-  - Frida server is pre-installed via MagiskFrida module
-
-  Frida workflow:
-  1. sniaff.frida_list(applicationsOnly=true) -> find target package
-  2. Write hook script (inline or file)
-  3. sniaff.frida_run(target="com.app", script="...", mode="spawn")
-  4. Analyze console.log output from hooks
+  Use Frida MCP for dynamic analysis:
+  1. list_applications(deviceId) -> find target package
+  2. spawn_process(identifier, [], {}, deviceId) -> start app suspended
+  3. create_interactive_session(pid, deviceId) -> attach to process
+  4. execute_in_session(sessionId, script, true) -> inject hooks (keep_alive=true)
+  5. resume_process(pid, deviceId) -> let app run
+  6. get_session_messages(sessionId) -> read console.log output
 
   Common hook patterns:
   - Method tracing: log args and return values
@@ -173,7 +184,7 @@ Working Methodology
    Every finding must reference:
    - Specific file and line in decompiled source
    - Captured network request/response (entryId from mitm.query)
-   - Runtime observation (UI dump, shell output, Frida log)
+   - Runtime observation (UI dump, shell output, Frida logs)
 
 ---
 
@@ -214,7 +225,7 @@ For each analysis task, provide:
 2. Evidence
    - Traffic: entryId, method, URL, relevant request/response excerpts
    - Code: file path, line numbers, relevant code snippets
-   - Runtime: UI dump excerpts, shell output, Frida logs
+   - Runtime: UI dump excerpts, shell output, Frida hook logs
 
 3. Flow Map (when applicable)
    UI action -> network request -> code path -> data handling
