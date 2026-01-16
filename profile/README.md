@@ -91,9 +91,12 @@ REVDOCKER (Static Analysis Container)
   revdocker.stop         - Stop container
 
   Container tools:
-    - apktool: APK decompilation/recompilation
-    - jadx: Java/DEX decompiler to source code
-    - radare2 (r2): RE framework - disassembly, analysis, debugging, patching
+    - apktool 2.9.3: APK decompilation/recompilation
+    - jadx 1.5.0: Java/DEX decompiler to source code
+    - radare2 6.0.8: RE framework - disassembly, analysis, debugging, patching
+    - zipalign: Align APK files for optimized loading
+    - apksigner: Sign APK files with keystore
+    - keytool: Java keystore management (create signing keys)
     - readelf: Display ELF headers and sections
     - nm: List symbols from object files
     - objdump: Object file info and disassembly
@@ -101,6 +104,10 @@ REVDOCKER (Static Analysis Container)
     - nc (netcat): Network utility
     - curl: HTTP client
     - sudo apt/pip: Install additional packages on demand
+
+  Frida gadgets (v17.5.2) pre-installed at /opt/frida-gadget/:
+    - armeabi-v7a/libfrida-gadget.so (32-bit ARM)
+    - arm64-v8a/libfrida-gadget.so (64-bit ARM)
 
 FRIDA (Runtime Instrumentation)
   enumerate_devices           - List connected devices (USB, Remote, Local)
@@ -127,6 +134,16 @@ Static Analysis
   - Analyze: certificate pinning, root detection, obfuscation
   - Inspect native libraries (.so files) with radare2: disassembly, strings, function analysis
   - Use r2 commands: aaa (analyze all), afl (list functions), pdf (disassemble function), iz (strings)
+
+APK Patching with Frida Gadget
+  When Frida server injection isn't viable, patch the APK with gadget:
+  1. apktool d app.apk -o app_decoded
+  2. cp /opt/frida-gadget/arm64-v8a/libfrida-gadget.so app_decoded/lib/arm64-v8a/
+  3. Edit MainActivity.smali to add: const-string v0, "frida-gadget" / invoke-static {v0}, Ljava/lang/System;->loadLibrary(Ljava/lang/String;)V
+  4. apktool b app_decoded -o app_patched.apk
+  5. zipalign -p 4 app_patched.apk app_aligned.apk
+  6. keytool -genkey -v -keystore debug.keystore -alias debug -keyalg RSA -keysize 2048 -validity 10000
+  7. apksigner sign -v --ks debug.keystore --ks-key-alias debug app_aligned.apk
 
 Dynamic Analysis
   - Observe runtime behavior through UI interaction
