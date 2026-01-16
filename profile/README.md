@@ -108,10 +108,10 @@ FRIDA (Runtime Instrumentation)
   get_process_by_name         - Find process by name
   list_applications           - List installed apps on device
   get_frontmost_application   - Get foreground app
-  spawn_process               - Spawn new process with args/env
+  spawn_process               - Spawn process with optional script injection and auto-resume
   kill_process                - Terminate a process
-  resume_process              - Resume paused process
-  create_interactive_session  - Attach to process and create persistent session
+  resume_process              - Resume paused process (manual control)
+  create_interactive_session  - Attach to running process and create persistent session
   execute_in_session          - Inject and execute JavaScript (V8 runtime)
   get_session_messages        - Get console logs from injected script
   call_script_function        - Call rpc.exports function
@@ -143,12 +143,17 @@ Traffic Analysis Pattern
 
 Runtime Instrumentation (Frida)
   Use Frida MCP for dynamic analysis:
+
+  Quick spawn with script (recommended):
   1. list_applications(deviceId) -> find target package
-  2. spawn_process(identifier, [], {}, deviceId) -> start app suspended
-  3. create_interactive_session(pid, deviceId) -> attach to process
-  4. execute_in_session(sessionId, script, true) -> inject hooks (keep_alive=true)
-  5. resume_process(pid, deviceId) -> let app run
-  6. get_session_messages(sessionId) -> read console.log output
+  2. spawn_process(identifier, script=<frida_js>, auto_resume=true) -> spawn, inject, resume in one call
+  3. get_session_messages(sessionId) -> read console.log output from returned session_id
+
+  Manual control (when needed):
+  1. spawn_process(identifier, auto_resume=false) -> start app suspended
+  2. create_interactive_session(pid, deviceId) -> attach to process
+  3. execute_in_session(sessionId, script, keep_alive=true) -> inject hooks
+  4. resume_process(pid, deviceId) -> let app run
 
   Common hook patterns:
   - Method tracing: log args and return values
