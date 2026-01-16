@@ -8,7 +8,7 @@ It provides five coordinated MCP servers that work together to create a complete
 - **sniaff-android-mcp** - Android emulator management with rooted AVD support
 - **sniaff-mitmdump-mcp** - MITM proxy for HTTP/HTTPS traffic capture and analysis
 - **sniaff-revdocker-mcp** - Docker container with reverse engineering tools (apktool, jadx, radare2)
-- **frida-mcp-node** - Dynamic instrumentation via Frida for runtime hooking and analysis
+- **sniaff-frida-mcp** - Dynamic instrumentation via Frida for runtime hooking and analysis
 
 ## Features
 
